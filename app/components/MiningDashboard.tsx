@@ -1,12 +1,11 @@
 // app/components/MiningDashboard.tsx
 'use client';
 
-// (我们现在需要 'useState' 来处理“复制”按钮的状态)
 import { useState, useEffect } from 'react'; 
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther, isAddress } from 'viem'; 
 
-// 导入 ABI 和常量
+// 导入 ABI 和常量 (V4)
 import { miningDAppAbi } from '../../abi/miningDAppAbi'; 
 import { DAPP_ADDRESS, TARGET_CHAIN_ID } from '../constants';
 
@@ -15,11 +14,9 @@ export function MiningDashboard() {
   const { address, chain } = useAccount();
   const [referrer, setReferrer] = useState(''); 
   const [referrerError, setReferrerError] = useState('');
-  
-  // (新增) "复制" 按钮的状态
   const [copyStatus, setCopyStatus] = useState('复制'); 
 
-  // 1. (读取) 检查用户数据 (包括激活状态、下级数量、总算力)
+  // 1. (读取) 检查用户数据 (V4)
   const { data: userData, refetch: refetchUserData } = useReadContract({
     abi: miningDAppAbi,
     address: DAPP_ADDRESS,
@@ -30,17 +27,24 @@ export function MiningDashboard() {
     },
   });
   
-  // --- (新增) 解析 Struct 数据 ---
-  // userData 是一个数组: [isActivated, referrer, directReferrals, miningPower, rewardDebt]
+  // --- (V4) 解析 Struct 数据 ---
+  // V4 结构体: [isActivated, referrer, directReferrals, L2Referrals, miningPower, rewardDebt]
+  // 索引:         [0]          [1]       [2]               [3]           [4]           [5]
+  
   const isActivated = userData && Array.isArray(userData) ? (userData[0] as boolean) : false;
-  // (新增) 直接下级数量 (bigint 类型)
+  
+  // (V4) 直接下级 (索引 [2])
   const directReferrals = userData && Array.isArray(userData) && userData.length > 2 ? (userData[2] as bigint) : BigInt(0);
-  // (新增) 总算力 (bigint 类型)
-  const totalMiningPower = userData && Array.isArray(userData) && userData.length > 3 ? (userData[3] as bigint) : BigInt(0);
-  // (新增) 计算 L1 预估收益
-  const estimatedL1Rewards = (Number(directReferrals) * 0.004).toFixed(3); // 0.004 tBNB per referral
+  // (V4) L2 下级 (索引 [3])
+  const L2Referrals = userData && Array.isArray(userData) && userData.length > 3 ? (userData[3] as bigint) : BigInt(0);
+  // (V4) 总算力 (索引 [4])
+  const totalMiningPower = userData && Array.isArray(userData) && userData.length > 4 ? (userData[4] as bigint) : BigInt(0);
+  
+  // (V4) 计算收益
+  const estimatedL1Rewards = (Number(directReferrals) * 0.004).toFixed(3);
+  const estimatedL2Rewards = (Number(L2Referrals) * 0.002).toFixed(3); // 新增 L2 收益
 
-  // 2. (读取) 获取用户待领取的 MMT 数量
+  // 2. (读取) 获取 MMT (不变)
   const { data: pendingMmt, refetch: refetchPendingMmt } = useReadContract({
     abi: miningDAppAbi,
     address: DAPP_ADDRESS,
@@ -52,7 +56,7 @@ export function MiningDashboard() {
     },
   });
 
-  // 3. (写入) 准备 "activateMining" 函数
+  // 3. (写入) 激活 (不变)
   const { 
     data: activateHash, 
     isPending: isActivating, 
@@ -61,7 +65,7 @@ export function MiningDashboard() {
     reset: resetActivate
   } = useWriteContract();
 
-  // 4. (写入) 准备 "claimMiningRewards" 函数
+  // 4. (写入) 领取 (不变)
   const { 
     data: claimHash, 
     isPending: isClaiming, 
@@ -69,75 +73,56 @@ export function MiningDashboard() {
     writeContract: claimMiningRewards 
   } = useWriteContract();
 
-  // 5. (等待) 监听交易是否成功
+  // 5. (等待) 监听 (不变)
   const { isSuccess: isActivationSuccess, data: activationReceipt } = useWaitForTransactionReceipt({
     hash: activateHash,
   });
-
   const { isSuccess: isClaimSuccess, data: claimReceipt } = useWaitForTransactionReceipt({
     hash: claimHash,
   });
 
-  // 监视激活是否成功
+  // 监视激活 (不变)
   useEffect(() => {
     if (isActivationSuccess) {
-      console.log('Activation successful!', activationReceipt);
-      refetchUserData(); // (重要) 激活后, 重新查询 user 数据 (算力/下级)
+      console.log('V4 Activation successful!', activationReceipt);
+      refetchUserData(); 
       refetchPendingMmt();
       resetActivate(); 
     }
   }, [isActivationSuccess, activationReceipt, refetchUserData, refetchPendingMmt, resetActivate]); 
 
-  // 监视领取是否成功
+  // 监视领取 (不变)
   useEffect(() => {
     if (isClaimSuccess) {
-      console.log('Claim successful!', claimReceipt);
+      console.log('V4 Claim successful!', claimReceipt);
       refetchPendingMmt(); 
     }
   }, [isClaimSuccess, claimReceipt, refetchPendingMmt]);
 
-
-  // --- 辅助函数 ---
-
-  // (新增) 复制功能
+  // --- 辅助函数 (不变) ---
   const handleCopyReferral = () => {
     if (address) {
-      navigator.clipboard.writeText(address); // 复制当前用户的地址
+      navigator.clipboard.writeText(address);
       setCopyStatus('已复制!');
-      setTimeout(() => {
-        setCopyStatus('复制');
-      }, 2000); // 2秒后重置按钮文字
+      setTimeout(() => { setCopyStatus('复制'); }, 2000);
     }
   };
-
-  // 验证推荐人地址
   const validateReferrer = (addr: string) => {
-    if (addr.trim() === '') {
-      setReferrerError(''); 
-      return true;
-    }
-    if (!isAddress(addr.trim())) {
-      setReferrerError('请输入一个有效的 tBNB 地址');
-      return false;
-    }
-    setReferrerError('');
-    return true;
+    if (addr.trim() === '') { setReferrerError(''); return true; }
+    if (!isAddress(addr.trim())) { setReferrerError('请输入一个有效的 tBNB 地址'); return false; }
+    setReferrerError(''); return true;
   };
 
-  // --- 渲染逻辑 ---
-
-  // 如果钱包连接的网络不是 BSC Testnet (ID: 97)
+  // --- 渲染逻辑 (不变) ---
   if (chain && chain.id !== TARGET_CHAIN_ID) {
     return <div className="text-red-500">请切换到 BNB Testnet！</div>;
   }
-
-  // --- 核心 UI ---
   
-  // A. 如果用户未激活
+  // A. 如果用户未激活 (不变)
   if (!isActivated) {
     return (
       <div className="p-6 border rounded-lg bg-gray-800 text-white w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">激活挖矿</h2>
+        <h2 className="text-2xl font-bold mb-4">激活挖矿 (V4)</h2>
         <p className="mb-4">支付 0.01 tBNB 以永久激活你的挖矿账户。</p>
         <input
           type="text"
@@ -150,11 +135,9 @@ export function MiningDashboard() {
           className={`w-full p-2 mb-2 bg-gray-700 rounded text-white ${referrerError ? 'border border-red-500' : ''}`}
         />
         {referrerError && <div className="text-sm text-red-500 mb-4">{referrerError}</div>}
-        
         <button
           onClick={() => {
             if (!validateReferrer(referrer)) return; 
-
             const referrerAddress = (referrer.trim() || '0x0000000000000000000000000000000000000000') as `0x${string}`;
             activateMining({
               abi: miningDAppAbi,
@@ -169,8 +152,7 @@ export function MiningDashboard() {
         >
           {isActivating ? '正在激活...' : '支付 0.01 tBNB 激活'}
         </button>
-        {activateHash && <div className="mt-2 text-sm text-gray-400">交易已发送: {activateHash}</div>}
-        
+        {activateHash && <div className="mt-2 text-sm text-gray-400 break-all">交易已发送: {activateHash}</div>}
         {activationError && (
           <div className="mt-2 text-sm text-red-500">
             <strong>激活失败:</strong> {activationError.message.includes('Referrer not activated') ? '推荐人未激活！' : activationError.message}
@@ -180,13 +162,13 @@ export function MiningDashboard() {
     );
   }
 
-  // B. 如果用户已激活 (我们在这里添加新板块)
+  // B. 如果用户已激活 (V4 升级)
   return (
     <div className="p-6 border rounded-lg bg-gray-800 text-white w-full max-w-md">
-      {/* (新增) 挖矿数据统计板块
+      {/* (V4) 挖矿数据统计板块
       */}
       <div className="mb-4">
-        <h2 className="text-2xl font-bold mb-4">挖矿控制台</h2>
+        <h2 className="text-2xl font-bold mb-4">挖矿控制台 (V4)</h2>
         <p className="text-lg flex justify-between">
           <span>状态:</span>
           <span className="text-green-400">已激活</span>
@@ -196,19 +178,26 @@ export function MiningDashboard() {
           <span className="text-white">{totalMiningPower.toString()} P</span>
         </p>
          <p className="text-lg flex justify-between">
-          <span>直接下级:</span>
+          <span>直接下级 (L1):</span>
           <span className="text-white">{directReferrals.toString()} 人</span>
         </p>
          <p className="text-lg flex justify-between">
-          <span>预估 L1 收益:</span>
+          <span>L1 收益 (tBNB):</span>
           <span className="text-white">{estimatedL1Rewards} tBNB</span>
         </p>
-        <p className="text-sm text-gray-400 mt-1">
-          (L2 收益被合约自动秒结，此处不统计)
+         {/* --- V4 新增行 --- */}
+         <p className="text-lg flex justify-between">
+          <span>间接下级 (L2):</span>
+          <span className="text-white">{L2Referrals.toString()} 人</span>
         </p>
+         <p className="text-lg flex justify-between">
+          <span>L2 收益 (tBNB):</span>
+          <span className="text-white">{estimatedL2Rewards} tBNB</span>
+        </p>
+         {/* --- V4 新增行结束 --- */}
       </div>
       
-      {/* (修改) MMT 领取板块
+      {/* (V4) MMT 领取板块
       */}
       <div className="mt-4 pt-4 border-t border-gray-700">
         <p className="text-lg flex justify-between mb-2">
@@ -238,7 +227,7 @@ export function MiningDashboard() {
         )}
       </div>
 
-      {/* (新增) 邀请好友板块
+      {/* (V4) 邀请好友板块
       */}
       <div className="mt-4 pt-4 border-t border-gray-700">
         <h3 className="text-xl font-bold mb-2">邀请好友</h3>
@@ -249,13 +238,13 @@ export function MiningDashboard() {
           <input
             type="text"
             readOnly
-            value={address || ''} // 显示当前连接的钱包地址
+            value={address || ''} 
             className="w-full p-2 bg-gray-900 text-gray-300 rounded-l-md"
           />
           <button
-            onClick={handleCopyReferral} // 调用复制函数
+            onClick={handleCopyReferral} 
             className="p-3 bg-blue-600 text-white rounded-r-md hover:bg-blue-700"
-            style={{ minWidth: '80px' }} // 防止按钮文字变化时跳动
+            style={{ minWidth: '80px' }} 
           >
             {copyStatus}
           </button>

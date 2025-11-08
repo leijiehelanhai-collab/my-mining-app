@@ -1,5 +1,4 @@
 export const miningTokenAbi = [
-  [
 	{
 		"inputs": [
 			{
@@ -424,5 +423,4 @@ export const miningTokenAbi = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-]
 ] as const;

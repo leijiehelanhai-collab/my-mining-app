@@ -1,4 +1,26 @@
+// abi/miningDAppAbi.ts
+
 export const miningDAppAbi = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_referrer",
+				"type": "address"
+			}
+		],
+		"name": "activateMining",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "claimMiningRewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
 	{
 		"inputs": [
 			{
@@ -100,6 +122,13 @@ export const miningDAppAbi = [
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "renounceOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -119,42 +148,36 @@ export const miningDAppAbi = [
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "ACTIVATION_FEE",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
 			}
 		],
-		"stateMutability": "view",
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "REFERRAL_REWARD_L1",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
+		"name": "updateMiningPool",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "REFERRAL_REWARD_L2",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "address payable",
+				"name": "_to",
+				"type": "address"
 			}
 		],
-		"stateMutability": "view",
+		"name": "withdrawProfits",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -171,23 +194,16 @@ export const miningDAppAbi = [
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "ACTIVATION_FEE",
+		"outputs": [
 			{
-				"internalType": "address",
-				"name": "_referrer",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
-		"name": "activateMining",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "claimMiningRewards",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -263,9 +279,28 @@ export const miningDAppAbi = [
 	},
 	{
 		"inputs": [],
-		"name": "renounceOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"name": "REFERRAL_REWARD_L1",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "REFERRAL_REWARD_L2",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -279,26 +314,6 @@ export const miningDAppAbi = [
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
-		"name": "transferOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "updateMiningPool",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -328,6 +343,11 @@ export const miningDAppAbi = [
 			},
 			{
 				"internalType": "uint256",
+				"name": "L2Referrals",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
 				"name": "miningPower",
 				"type": "uint256"
 			},
@@ -339,18 +359,5 @@ export const miningDAppAbi = [
 		],
 		"stateMutability": "view",
 		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address payable",
-				"name": "_to",
-				"type": "address"
-			}
-		],
-		"name": "withdrawProfits",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	}
-] as const;
+]as const;
